@@ -1,0 +1,19 @@
+
+> salon-booking@0.1.0 dev
+> next dev
+
+ΓÜá Port 3000 is in use by process 23584, using available port 3001 instead.
+Γû▓ Next.js 16.2.2 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://172.31.128.1:3001
+- Environments: .env.local, .env
+Γ£ô Ready in 445ms
+Γ¿» Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          23584
+- Dir:          E:\AA SAAS\Salon\salon-booking
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 23584 /F to stop it.
+[?25h

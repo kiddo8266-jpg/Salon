@@ -1,0 +1,32 @@
+[dotenv@17.3.1] injecting env (8) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+DATABASE_URL defined: true
+PrismaClientInitializationError: `PrismaClient` needs to be constructed with a non-empty, valid `PrismaClientOptions`:
+
+```
+new PrismaClient({
+  ...
+})
+```
+
+or
+
+```
+constructor() {
+  super({ ... });
+}
+```
+          
+    at new t (E:\AA SAAS\Salon\salon-booking\node_modules\@prisma\client\runtime\client.js:70:1527)
+    at main (E:\AA SAAS\Salon\salon-booking\prisma\seed.js:9:18)
+    at Object.<anonymous> (E:\AA SAAS\Salon\salon-booking\prisma\seed.js:172:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) {
+  clientVersion: '7.6.0',
+  errorCode: undefined,
+  retryable: undefined
+}
