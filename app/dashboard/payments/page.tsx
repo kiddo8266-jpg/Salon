@@ -1,6 +1,5 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
 import { 
   DollarSign, 
   TrendingUp, 
@@ -15,13 +14,29 @@ import {
   Database,
   Banknote,
   Globe,
-  ArrowDownLeft
+  ArrowDownLeft,
+  PieChart as PieChartIcon,
+  BarChart as BarChartIcon
 } from "lucide-react"
 import { format } from "date-fns"
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from "recharts"
 
 export default function PaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [payments, setPayments] = useState<any[]>([])
+  const [popularServices, setPopularServices] = useState<any[]>([])
+  const [sourceData, setSourceData] = useState<any[]>([])
   const [stats, setStats] = useState({
     totalRevenue: 0,
     monthlyRevenue: 0,
@@ -41,12 +56,42 @@ export default function PaymentsPage() {
       if (Array.isArray(data)) {
         setPayments(data)
         calculateStats(data)
+        processAnalytics(data)
       }
     } catch (err) {
       console.error("Failed to fetch payments:", err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const processAnalytics = (data: any[]) => {
+    // 1. Service Popularity
+    const serviceMap: Record<string, { name: string, value: number, count: number }> = {}
+    const sources = { "Public": 0, "Walk-in": 0 }
+
+    data.forEach(p => {
+      const sName = p.appointment.service.name
+      if (!serviceMap[sName]) {
+        serviceMap[sName] = { name: sName, value: 0, count: 0 }
+      }
+      serviceMap[sName].value += p.amount
+      serviceMap[sName].count += 1
+
+      // Heuristic: ONLINE/CARD often implies public/pre-booked vs CASH for walk-in
+      if (p.method === 'ONLINE') sources["Public"] += p.amount
+      else sources["Walk-in"] += p.amount
+    })
+
+    const topServices = Object.values(serviceMap)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
+
+    setPopularServices(topServices)
+    setSourceData([
+      { name: 'Public', value: sources["Public"] },
+      { name: 'Walk-in', value: sources["Walk-in"] }
+    ])
   }
 
   const calculateStats = (data: any[]) => {
@@ -85,6 +130,8 @@ export default function PaymentsPage() {
       default: return <Banknote className="w-4 h-4" />
     }
   }
+
+  const COLORS = ['#7c3aed', '#13ec80', '#d2bbff', '#f472b6', '#3b82f6']
 
   return (
     <div className="flex flex-col gap-8 w-full h-full pb-24">
@@ -140,6 +187,74 @@ export default function PaymentsPage() {
           </div>
         ))}
       </section>
+
+      {/* Advanced Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         {/* Service Performance (Bar Chart) */}
+         <div className="lg:col-span-2 bg-[#161b2b]/40 border border-[#4a4455]/10 rounded-[2.5rem] p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+                <BarChartIcon className="w-5 h-5 text-[#7c3aed]" />
+                Top Services by Revenue
+              </h3>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={popularServices}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#4a4455/20" vertical={false} />
+                  <XAxis dataKey="name" stroke="#958da1" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#958da1" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#161b2b', borderRadius: '12px', border: '1px solid #4a4455/20' }}
+                    itemStyle={{ color: '#d2bbff' }}
+                  />
+                  <Bar dataKey="value" fill="#7c3aed" radius={[6, 6, 0, 0]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+         </div>
+
+         {/* Source Distribution (Pie Chart) */}
+         <div className="bg-[#161b2b]/40 border border-[#4a4455]/10 rounded-[2.5rem] p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+                <PieChartIcon className="w-5 h-5 text-[#13ec80]" />
+                Booking Source
+              </h3>
+            </div>
+            <div className="h-[250px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={sourceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {sourceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+               </ResponsiveContainer>
+            </div>
+            <div className="flex flex-col gap-3 mt-4">
+               {sourceData.map((s, i) => (
+                 <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                       <span className="text-[#958da1] text-sm font-medium">{s.name}</span>
+                    </div>
+                    <span className="text-white font-bold text-sm">${s.value.toFixed(0)}</span>
+                 </div>
+               ))}
+            </div>
+         </div>
+      </div>
 
       {/* Transaction List */}
       <section className="flex flex-col gap-6">

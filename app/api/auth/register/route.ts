@@ -8,18 +8,19 @@ export async function POST(req: Request) {
 
     // 1. Validation
     if (!businessName || !businessSlug || !adminName || !email || !password) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required fields rituals" }, { status: 400 })
     }
 
     // 2. Check if Email or Slug exists
+    // Using findUnique since email is now globally unique
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
-      return NextResponse.json({ error: "Email already registered" }, { status: 409 })
+      return NextResponse.json({ error: "Email already registered in the ecosystem." }, { status: 409 })
     }
 
     const existingTenant = await prisma.tenant.findUnique({ where: { slug: businessSlug } })
     if (existingTenant) {
-      return NextResponse.json({ error: "Workspace slug already exists. Please choose another." }, { status: 409 })
+      return NextResponse.json({ error: "Workspace slug already exists. Please choose another path." }, { status: 409 })
     }
 
     // 3. Hash Password
@@ -32,6 +33,9 @@ export async function POST(req: Request) {
         data: {
           name: businessName,
           slug: businessSlug,
+          // Default to Free Plan upon signup
+          planType: 'FREE',
+          isActive: true
         }
       })
 
@@ -50,12 +54,16 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json(
-      { message: "Workspace created successfully", tenantId: result.tenant.id },
+      { 
+        message: "SaaS Space created successfully.", 
+        tenantId: result.tenant.id,
+        slug: result.tenant.slug 
+      },
       { status: 201 }
     )
 
   } catch (error: any) {
     console.error("Registration Error:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal Server Ritual Failure" }, { status: 500 })
   }
 }

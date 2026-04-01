@@ -5,6 +5,32 @@ import { prisma } from '../lib/prisma'
 async function main() {
   console.log('--- Starting Seeding Process ---')
 
+  // 0. Create System Administrator (SUPER_ADMIN)
+  const systemTenant = await prisma.tenant.upsert({
+    where: { slug: 'wellnessos-system' },
+    update: {},
+    create: {
+      name: 'WellnessOS System',
+      slug: 'wellnessos-system',
+      category: BusinessCategory.WELLNESS_CENTER,
+      planType: PlanType.ENTERPRISE,
+    },
+  })
+
+  const adminHashedPassword = await bcrypt.hash('EliteAdmin2026!', 10)
+  await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: systemTenant.id, email: 'admin@wellnessos.com' } },
+    update: { role: UserRole.SUPER_ADMIN },
+    create: {
+      tenantId: systemTenant.id,
+      name: 'System Administrator',
+      email: 'admin@wellnessos.com',
+      password: adminHashedPassword,
+      role: UserRole.SUPER_ADMIN,
+    },
+  })
+  console.log(`- Created Super Admin: admin@wellnessos.com`)
+
   // 1. Create a Premium Tenant
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'wellness-center-elite' },
@@ -106,8 +132,11 @@ async function main() {
 
   const services = await Promise.all(
     serviceData.map((s) =>
-      prisma.service.create({
-        data: {
+      prisma.service.upsert({
+        where: { id: `service-${s.name.toLowerCase().replace(/ /g, '-')}` },
+        update: {},
+        create: {
+          id: `service-${s.name.toLowerCase().replace(/ /g, '-')}`,
           tenantId: tenant.id,
           ...s,
         },
@@ -128,8 +157,10 @@ async function main() {
 
   const clients = await Promise.all(
     clientData.map((c) =>
-      prisma.client.create({
-        data: {
+      prisma.client.upsert({
+        where: { tenantId_email: { tenantId: tenant.id, email: c.email } },
+        update: {},
+        create: {
           tenantId: tenant.id,
           ...c,
         },

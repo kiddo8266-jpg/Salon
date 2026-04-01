@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Next-generation booking, management, and CRM platform for wellness businesses.",
 };
 
+import { Providers } from "@/components/providers/session-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +31,9 @@ export default function RootLayout({
       suppressHydrationWarning // Used by next-themes for dark mode
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

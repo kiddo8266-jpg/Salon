@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─────────────────────────────────────────────
@@ -24,6 +23,7 @@ enum BusinessCategory {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   OWNER
   STAFF
   VIEWER
@@ -93,6 +93,7 @@ model Tenant {
   appointments Appointment[]
   payments     Payment[]
   media        Media[]
+  invoices     Invoice[]
 
   @@index([slug])
   @@map("tenants")
@@ -101,7 +102,7 @@ model Tenant {
 model User {
   id             String   @id @default(cuid())
   tenantId       String
-  email          String
+  email          String   @unique
   name           String?
   password       String?  // hashed, null for OAuth users
   avatarUrl      String?
@@ -117,7 +118,6 @@ model User {
   accounts       Account[]
   sessions       Session[]
 
-  @@unique([tenantId, email])
   @@index([tenantId])
   @@index([email])
   @@map("users")
@@ -321,4 +321,26 @@ model Media {
 
   @@index([tenantId])
   @@map("media")
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  tenantId    String
+  amount      Float
+  planType    PlanType
+  status      String   @default("UNPAID") // UNPAID, PAID, OVERDUE
+  billingDate DateTime @default(now())
+  dueDate     DateTime
+  paidAt      DateTime?
+  periodStart DateTime
+  periodEnd   DateTime
+  invoiceUrl  String?  // Link to PDF receipt or hosted view
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("invoices")
 }

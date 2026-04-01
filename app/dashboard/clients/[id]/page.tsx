@@ -18,11 +18,11 @@ import {
 import Link from "next/link"
 import { format } from "date-fns"
 
-export default async function ClientDetailPage({ params }: { params: { id: string } }) {
+export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  const { id } = params
+  const { id } = await params
 
   const client = await prisma.client.findUnique({
     where: { id },

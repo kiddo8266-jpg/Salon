@@ -23,9 +23,9 @@ import { useRouter, useSearchParams } from "next/navigation"
 export default function PublicBookingWizard({
   params
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const { slug } = params
+  const { slug } = React.use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialServiceId = searchParams.get('serviceId')

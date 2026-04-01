@@ -7,9 +7,9 @@ export default async function PublicSalonLayout({
   params
 }: {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const { slug } = params
+  const { slug } = await params
 
   const tenant = await prisma.tenant.findUnique({
     where: { slug }

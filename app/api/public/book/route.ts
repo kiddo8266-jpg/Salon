@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { addMinutes } from "date-fns"
+import { addMinutes, format } from "date-fns"
+import { sendEmail, getBookingConfirmationTemplate } from "@/lib/notifications"
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +22,12 @@ export async function POST(req: Request) {
     }
 
     // 1. Fetch Service & Tenant
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId }
+    })
+    
+    if (!tenant) return NextResponse.json({ error: "Tenant not found" }, { status: 404 })
+
     const service = await prisma.service.findUnique({
       where: { id: serviceId, tenantId, isActive: true }
     })
@@ -28,9 +35,10 @@ export async function POST(req: Request) {
     if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 })
 
     // 2. Client Management (Match by Email per Tenant)
-    let client = await prisma.client.findUnique({
+    let client = await prisma.client.findFirst({
       where: { 
-        tenantId_email: { tenantId, email } 
+        tenantId, 
+        email 
       }
     })
 
@@ -88,6 +96,14 @@ export async function POST(req: Request) {
         totalVisits: { increment: 1 }
       }
     })
+
+    // 6. TRICK: Trigger Notifications (Async)
+    const formattedTime = format(start, "eeee, MMMM do @ HH:mm")
+    sendEmail({
+      to: email,
+      subject: `Ritual Secured: ${service.name} at ${tenant.name}`,
+      html: getBookingConfirmationTemplate(tenant.name, service.name, formattedTime)
+    }).catch(e => console.error("Async Email Error:", e))
 
     return NextResponse.json(appointment)
   } catch (error) {
